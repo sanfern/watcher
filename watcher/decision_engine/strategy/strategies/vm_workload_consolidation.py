@@ -263,21 +263,21 @@ class VMWorkloadConsolidation(base.ServerConsolidationBaseStrategy):
         if self.config.datasource == "ceilometer":
             instance_cpu_util = self.ceilometer.statistic_aggregation(
                 resource_id=instance.uuid, meter_name=cpu_util_metric,
-                period=period, aggregate='avg')
+                period=self.period, aggregate='avg')
             instance_ram_util = self.ceilometer.statistic_aggregation(
                 resource_id=instance.uuid, meter_name=ram_util_metric,
-                period=period, aggregate='avg')
+                period=self.period, aggregate='avg')
             if not instance_ram_util:
                 instance_ram_util = self.ceilometer.statistic_aggregation(
                     resource_id=instance.uuid, meter_name=ram_alloc_metric,
-                    period=period, aggregate='avg')
+                    period=self.period, aggregate='avg')
             instance_disk_util = self.ceilometer.statistic_aggregation(
                 resource_id=instance.uuid, meter_name=disk_alloc_metric,
-                period=period, aggregate='avg')
+                period=self.period, aggregate='avg')
         elif self.config.datasource == "gnocchi":
             stop_time = datetime.datetime.utcnow()
             start_time = stop_time - datetime.timedelta(
-                seconds=int(period))
+                seconds=int(self.period))
             instance_cpu_util = self.gnocchi.statistic_aggregation(
                 resource_id=instance.uuid,
                 metric=cpu_util_metric,

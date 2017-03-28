@@ -25,19 +25,17 @@ from watcher.common import exception
 from watcher.decision_engine.model import model_root
 from watcher.decision_engine.strategy import strategies
 from watcher.tests import base
-from watcher.tests.decision_engine.model import ceilometer_metrics
 from watcher.tests.decision_engine.model import faker_cluster_and_metrics
-from watcher.tests.decision_engine.model import gnocchi_metrics
 
 class TestVMWorkloadConsolidation(base.TestCase):
 
     scenarios = [
         ("Ceilometer",
          {"datasource": "ceilometer",
-          "fake_datasource_cls": ceilometer_metrics.FakeCeilometerMetrics}),
+          "fake_datasource_cls": faker_cluster_and_metrics.FakeCeilometerMetrics}),
         ("Gnocchi",
          {"datasource": "gnocchi",
-          "fake_datasource_cls": gnocchi_metrics.FakeGnocchiMetrics}),
+          "fake_datasource_cls": faker_cluster_and_metrics.FakeGnocchiMetrics}),
     ]
 
 
@@ -69,13 +67,14 @@ class TestVMWorkloadConsolidation(base.TestCase):
         self.m_audit_scope.return_value = mock.Mock()
 
         # fake metrics
-        self.fake_metrics = self.fake_datasource_cls()
+        self.fake_metrics = self.fake_datasource_cls(
+            self.m_model.return_value)
 
         self.m_model.return_value = model_root.ModelRoot()
         self.m_datasource.return_value = mock.Mock(
             statistic_aggregation=self.fake_metrics.mock_get_statistics)
         self.strategy = strategies.VMWorkloadConsolidation(
-            config=mock.Mock(datasource=self.m_datasource))
+            config=mock.Mock(datasource=self.datasource))
 
     def test_exception_stale_cdm(self):
         self.fake_cluster.set_cluster_data_model_as_stale()
@@ -337,8 +336,8 @@ class TestVMWorkloadConsolidation(base.TestCase):
         elif self.strategy.config.datasource == "gnocchi":
             stop_time = datetime.datetime.utcnow()
             start_time = stop_time - datetime.timedelta(
-                seconds=int('7200'))
+                seconds=int('3600'))
             m_gnocchi.statistic_aggregation.assert_called_with(
-                resource_id=resource_id, metric='compute.node.cpu.percent',
+                resource_id=instance0.uuid, metric='disk.root.size',
                 granularity=300, start_time=start_time, stop_time=stop_time,
                 aggregation='mean')
